@@ -1,0 +1,21 @@
+.overlay-root {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  background: transparent;
+}
+
+.avatar-panel {
+  position: fixed;
+  width: 320px;
+  height: 420px;
+  pointer-events: auto;
+  border-radius: 20px;
+}
+
+.avatar-canvas { width: 100%; height: calc(100% - 24px); background: transparent; }
+.drag-handle, .hide-button { position: absolute; z-index: 1; border: 0; border-radius: 999px; background: rgba(20, 15, 37, .72); color: white; cursor: grab; }
+.drag-handle { top: 8px; left: 8px; }
+.hide-button { top: 8px; right: 8px; cursor: pointer; }
+.avatar-status { position: absolute; bottom: 0; margin: 0; width: 100%; color: white; font: 12px system-ui; text-align: center; text-shadow: 0 1px 3px black; }
