@@ -1,21 +1,18 @@
-.overlay-root {
-  position: fixed;
-  inset: 0;
-  z-index: 2147483647;
-  pointer-events: none;
-  background: transparent;
-}
-
-.avatar-panel {
-  position: fixed;
-  width: 320px;
-  height: 420px;
-  pointer-events: auto;
-  border-radius: 20px;
-}
-
-.avatar-canvas { width: 100%; height: calc(100% - 24px); background: transparent; }
-.drag-handle, .hide-button { position: absolute; z-index: 1; border: 0; border-radius: 999px; background: rgba(20, 15, 37, .72); color: white; cursor: grab; }
-.drag-handle { top: 8px; left: 8px; }
-.hide-button { top: 8px; right: 8px; cursor: pointer; }
-.avatar-status { position: absolute; bottom: 0; margin: 0; width: 100%; color: white; font: 12px system-ui; text-align: center; text-shadow: 0 1px 3px black; }
+.overlay-root { position: fixed; inset: 0; z-index: 2147483647; pointer-events: none; background: transparent; }
+.morph-stage { position: fixed; width: 340px; height: 340px; touch-action: none; cursor: grab; user-select: none; }
+.morph-stage:active { cursor: grabbing; }
+.shape-canvas { display: block; width: 300px; height: 300px; background: transparent; }
+.canvas-fallback { width: 260px; margin: 104px 0 0 12px; padding: 12px; border-radius: 12px; color: #f4f4ff; background: rgba(19, 21, 52, .88); font: 13px system-ui; }
+.key-control { position: absolute; top: 132px; right: 0; cursor: default; }
+.model-control { position: absolute; top: 180px; right: 0; cursor: default; }
+.model-dialog { position: absolute; top: 0; right: 48px; display: flex; gap: 8px; padding: 10px; border: 1px solid rgba(183,189,255,.26); border-radius: 12px; background: rgba(18,20,48,.96); }
+.model-dialog button { display: grid; gap: 5px; border: 0; border-radius: 8px; padding: 7px; color: white; background: #303171; cursor: pointer; font: 12px system-ui; }
+.blob-icon,.shape-icon { display: block; width: 28px; height: 28px; background: linear-gradient(135deg,#9263ff,#36cffa); border-radius: 48% 52% 42% 58%; }
+.shape-icon { border-radius: 2px; transform: rotate(45deg); background: linear-gradient(135deg,#ff7ac4,#5a7cff); }
+.key-button { width: 38px; height: 38px; border: 1px solid rgba(194, 203, 255, .4); border-radius: 999px; background: rgba(21, 24, 58, .84); color: #f3f5ff; font: 600 18px system-ui; box-shadow: 0 8px 24px rgba(13, 10, 30, .28); cursor: pointer; }
+.key-button:hover, .key-button:focus-visible { background: #4c47ab; outline: 2px solid #a7a4ff; outline-offset: 2px; }
+.key-tooltip, .key-menu { position: absolute; right: 48px; color: #f7f7ff; background: rgba(18, 20, 48, .94); border: 1px solid rgba(183, 189, 255, .26); box-shadow: 0 8px 30px rgba(10, 8, 30, .28); }
+.key-tooltip { top: 4px; border-radius: 7px; padding: 5px 8px; white-space: nowrap; font: 12px system-ui; }
+.key-menu { top: 48px; width: 184px; padding: 12px; border-radius: 12px; display: grid; gap: 6px; font: 13px system-ui; }
+.key-menu strong { color: #c7c7ff; }
+.key-menu small { color: #b4b6ca; }

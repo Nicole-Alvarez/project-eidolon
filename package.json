@@ -1,5 +1,5 @@
 {
-  "name": "eidolon-live2d-extension",
+  "name": "eidolon-canvas-morph-extension",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -13,9 +13,6 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "fflate": "^0.8.2",
-    "pixi-live2d-display": "^0.4.0",
-    "pixi.js": "^6.5.10",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

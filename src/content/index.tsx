@@ -1,15 +1,14 @@
 import { createRoot } from 'react-dom/client';
+import { ActionEngine } from '../engine/action-engine';
+import { models } from '../models/registry';
+import { CanvasRenderer } from '../engine/canvas-renderer';
 import overlayCss from './overlay.css?inline';
 import { OverlayApp } from './overlay-app';
-import { PixiLive2DRuntime } from '../runtime/pixi-live2d-runtime';
-import { CharacterRuntime } from '../runtime/character-runtime';
-import { bunnyFairy } from '../characters/bunny-fairy';
-import { validateActions, type ParsedActionResponse } from '../actions/contract';
 
 const hostId = '__eidolon_overlay_host__';
 let activeOverlay: OverlayHandle | undefined;
 
-export type OverlayHandle = { dispose(): void; run(response: ParsedActionResponse): Promise<void> };
+export type OverlayHandle = { dispose(): void };
 
 export function mountOverlay(): OverlayHandle {
   activeOverlay?.dispose();
@@ -22,52 +21,64 @@ export function mountOverlay(): OverlayHandle {
   shadow.append(style, mount);
   document.documentElement.append(host);
 
-  let characterRuntime: CharacterRuntime | undefined;
   const root = createRoot(mount);
-  const render = (status: string) => root.render(<OverlayApp status={status} onHide={() => activeOverlay?.dispose()} />);
-  render('Loading Bunny Fairy…');
-
-  queueMicrotask(async () => {
-    const canvas = shadow.querySelector('canvas');
-    if (!(canvas instanceof HTMLCanvasElement)) return;
-    try {
-      const runtime = new PixiLive2DRuntime(canvas);
-      characterRuntime = new CharacterRuntime(runtime);
-      await characterRuntime.load({ ...bunnyFairy, modelPath: chrome.runtime.getURL(bunnyFairy.modelPath) });
-      render('Ready');
-    } catch (error) {
-      render(error instanceof Error ? error.message : 'Character runtime could not start');
-    }
-  });
-
   const handle: OverlayHandle = {
     dispose() {
-      characterRuntime?.dispose();
       root.unmount();
       host.remove();
       if (activeOverlay === handle) activeOverlay = undefined;
     },
-    async run(response) {
-      if (!characterRuntime) throw new Error('Character runtime is not ready');
-      await characterRuntime.execute(validateActions(response, bunnyFairy));
-    },
   };
+
+  root.render(<OverlayApp onCanvasReady={(canvas) => startAnimation(canvas)} />);
   activeOverlay = handle;
   return handle;
+}
+
+function startAnimation(canvas: HTMLCanvasElement): () => void {
+  const renderer = new CanvasRenderer(canvas);
+  let engine = new ActionEngine(models.blob);
+  void chrome.storage.local.get('eidolon.canvasOverlay.model').then((stored) => {
+    const id = stored['eidolon.canvasOverlay.model'];
+    if (id === 'blob') engine = new ActionEngine(models.blob);
+    if (id === 'shapes') engine = new ActionEngine(models.shapes);
+  });
+  let frame = 0;
+  const render = (time: number) => {
+    renderer.draw(engine.tick(time));
+    frame = window.requestAnimationFrame(render);
+  };
+  const resize = () => renderer.resize();
+  const selectModel = (event: Event) => {
+    const id = (event as CustomEvent<'blob' | 'shapes'>).detail;
+    if (id === 'blob' || id === 'shapes') engine = new ActionEngine(models[id]);
+  };
+  window.addEventListener('resize', resize);
+  window.addEventListener('eidolon:model', selectModel);
+  frame = window.requestAnimationFrame(render);
+  return () => {
+    window.cancelAnimationFrame(frame);
+    window.removeEventListener('resize', resize);
+    window.removeEventListener('eidolon:model', selectModel);
+    renderer.dispose();
+  };
 }
 
 const readyFlag = '__eidolon_content_ready__';
 if (!(globalThis as Record<string, unknown>)[readyFlag]) {
   (globalThis as Record<string, unknown>)[readyFlag] = true;
-  chrome.runtime.onMessage.addListener((message: unknown) => {
+  chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
     if (!isMessage(message)) return;
+    if (message.type === 'overlay/ping') {
+      sendResponse({ ready: true });
+      return;
+    }
     if (message.type === 'overlay/show') mountOverlay();
     if (message.type === 'overlay/hide') activeOverlay?.dispose();
-    if (message.type === 'overlay/run') void activeOverlay?.run(message.response);
   });
 }
 
-function isMessage(value: unknown): value is { type: 'overlay/show' | 'overlay/hide' } | { type: 'overlay/run'; response: ParsedActionResponse } {
+function isMessage(value: unknown): value is { type: 'overlay/show' | 'overlay/hide' | 'overlay/ping' } {
   return typeof value === 'object' && value !== null && 'type' in value &&
-    ((value as { type: unknown }).type === 'overlay/show' || (value as { type: unknown }).type === 'overlay/hide' || (value as { type: unknown }).type === 'overlay/run');
+    ((value as { type: unknown }).type === 'overlay/show' || (value as { type: unknown }).type === 'overlay/hide' || (value as { type: unknown }).type === 'overlay/ping');
 }

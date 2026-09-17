@@ -22,12 +22,14 @@ test('shows the transparent overlay from the unpacked extension popup', async ()
     await page.goto('https://example.com');
     const popup = await context.newPage();
     await popup.goto(`chrome-extension://${extensionId}/src/popup/index.html`);
-    const showAvatar = popup.getByRole('button', { name: 'Show avatar' });
-    await expect(showAvatar).toBeEnabled();
-    await showAvatar.click();
-    await expect(popup.getByRole('status')).toHaveText('Overlay updated');
+    const showShape = popup.getByRole('button', { name: 'Show shape' });
+    await expect(showShape).toBeEnabled();
+    await showShape.click();
+    await expect(popup.getByRole('status')).toHaveText('Shape shown');
 
     await expect(page.locator('#__eidolon_overlay_host__')).toBeAttached();
+    await popup.getByRole('button', { name: 'Hide shape' }).click();
+    await expect(page.locator('#__eidolon_overlay_host__')).toHaveCount(0);
   } finally {
     await context.close();
   }
