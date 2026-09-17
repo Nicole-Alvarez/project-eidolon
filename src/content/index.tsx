@@ -4,14 +4,18 @@ import { models } from '../models/registry';
 import { CanvasRenderer } from '../engine/canvas-renderer';
 import overlayCss from './overlay.css?inline';
 import { OverlayApp } from './overlay-app';
+import { prefersReducedMotion, waitForExit } from './overlay-transition';
 
 const hostId = '__eidolon_overlay_host__';
 let activeOverlay: OverlayHandle | undefined;
 
-export type OverlayHandle = { dispose(): void };
+export type OverlayHandle = { dispose(): void; exit(): Promise<void>; cancelExit(): void };
 
 export function mountOverlay(): OverlayHandle {
-  activeOverlay?.dispose();
+  if (activeOverlay) {
+    activeOverlay.cancelExit();
+    return activeOverlay;
+  }
   const host = document.createElement('div');
   host.id = hostId;
   const shadow = host.attachShadow({ mode: 'closed' });
@@ -22,11 +26,35 @@ export function mountOverlay(): OverlayHandle {
   document.documentElement.append(host);
 
   const root = createRoot(mount);
+  let exiting = false;
+
   const handle: OverlayHandle = {
     dispose() {
       root.unmount();
       host.remove();
       if (activeOverlay === handle) activeOverlay = undefined;
+    },
+    cancelExit() {
+      if (!exiting) return;
+      exiting = false;
+      mount.querySelector('.overlay-root')?.classList.remove('is-exiting');
+    },
+    async exit() {
+      if (exiting) return;
+      const overlay = mount.querySelector('.overlay-root');
+      const shape = mount.querySelector('.shape-canvas, .canvas-fallback');
+      if (!overlay || !shape || prefersReducedMotion()) {
+        handle.dispose();
+        return;
+      }
+      exiting = true;
+      overlay.classList.add('is-exiting');
+      await waitForExit(shape);
+      if (!exiting) {
+        overlay.classList.remove('is-exiting');
+        return;
+      }
+      handle.dispose();
     },
   };
 
@@ -73,12 +101,16 @@ if (!(globalThis as Record<string, unknown>)[readyFlag]) {
       sendResponse({ ready: true });
       return;
     }
+    if (message.type === 'overlay/status') {
+      sendResponse({ visible: Boolean(activeOverlay) });
+      return;
+    }
     if (message.type === 'overlay/show') mountOverlay();
-    if (message.type === 'overlay/hide') activeOverlay?.dispose();
+    if (message.type === 'overlay/hide') void activeOverlay?.exit();
   });
 }
 
-function isMessage(value: unknown): value is { type: 'overlay/show' | 'overlay/hide' | 'overlay/ping' } {
+function isMessage(value: unknown): value is { type: 'overlay/show' | 'overlay/hide' | 'overlay/ping' | 'overlay/status' } {
   return typeof value === 'object' && value !== null && 'type' in value &&
-    ((value as { type: unknown }).type === 'overlay/show' || (value as { type: unknown }).type === 'overlay/hide' || (value as { type: unknown }).type === 'overlay/ping');
+    ((value as { type: unknown }).type === 'overlay/show' || (value as { type: unknown }).type === 'overlay/hide' || (value as { type: unknown }).type === 'overlay/ping' || (value as { type: unknown }).type === 'overlay/status');
 }

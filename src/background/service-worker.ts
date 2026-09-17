@@ -1,12 +1,22 @@
 import { assertExtensionMessage, type ExtensionMessage } from '../shared/messages';
 
 type RouterDependencies = {
-  sendToTab(tabId: number, message: unknown): Promise<void>;
+  sendToTab(tabId: number, message: unknown): Promise<unknown>;
   injectIntoTab(tabId: number): Promise<void>;
   wait?(milliseconds: number): Promise<void>;
 };
 
-export async function routePopupMessage(message: ExtensionMessage, dependencies: RouterDependencies): Promise<void> {
+export type RouteResult = { visible?: boolean };
+
+export async function routePopupMessage(message: ExtensionMessage, dependencies: RouterDependencies): Promise<RouteResult> {
+  if (message.type === 'overlay/status') {
+    try {
+      const response = await dependencies.sendToTab(message.tabId, { type: 'overlay/status' });
+      return { visible: isVisible(response) };
+    } catch {
+      return { visible: false };
+    }
+  }
   if (message.type === 'overlay/show' || message.type === 'overlay/hide') {
     if (message.type === 'overlay/show') {
       await dependencies.injectIntoTab(message.tabId);
@@ -14,6 +24,11 @@ export async function routePopupMessage(message: ExtensionMessage, dependencies:
     }
     await dependencies.sendToTab(message.tabId, { type: message.type });
   }
+  return {};
+}
+
+function isVisible(response: unknown): boolean {
+  return typeof response === 'object' && response !== null && (response as { visible?: unknown }).visible === true;
 }
 
 async function waitForContentReceiver(tabId: number, dependencies: RouterDependencies): Promise<void> {
@@ -36,7 +51,7 @@ if (typeof chrome !== 'undefined') {
     void (async () => {
       try {
         const parsed = assertExtensionMessage(message);
-        await routePopupMessage(parsed, {
+        const result = await routePopupMessage(parsed, {
           sendToTab: (tabId, payload) => chrome.tabs.sendMessage(tabId, payload),
           injectIntoTab: async (tabId) => {
             const script = chrome.runtime.getManifest().content_scripts?.[0]?.js?.[0];
@@ -44,7 +59,7 @@ if (typeof chrome !== 'undefined') {
             await chrome.scripting.executeScript({ target: { tabId }, files: [script] });
           },
         });
-        sendResponse({ ok: true });
+        sendResponse({ ok: true, ...result });
       } catch (error) {
         sendResponse({ ok: false, error: error instanceof Error ? error.message : 'Request failed' });
       }

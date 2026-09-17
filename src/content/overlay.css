@@ -1,11 +1,13 @@
 .overlay-root { position: fixed; inset: 0; z-index: 2147483647; pointer-events: none; background: transparent; }
-.morph-stage { position: fixed; width: 340px; height: 340px; touch-action: none; cursor: grab; user-select: none; }
+.morph-stage { position: fixed; touch-action: none; cursor: grab; user-select: none; }
 .morph-stage:active { cursor: grabbing; }
-.shape-canvas { display: block; width: 300px; height: 300px; background: transparent; }
+.shape-canvas { display: block; background: transparent; }
 .canvas-fallback { width: 260px; margin: 104px 0 0 12px; padding: 12px; border-radius: 12px; color: #f4f4ff; background: rgba(19, 21, 52, .88); font: 13px system-ui; }
-.key-control { position: absolute; top: 132px; right: 0; cursor: default; }
-.model-control { position: absolute; top: 180px; right: 0; cursor: default; }
-.model-dialog { position: absolute; top: 0; right: 48px; display: flex; gap: 8px; padding: 10px; border: 1px solid rgba(183,189,255,.26); border-radius: 12px; background: rgba(18,20,48,.96); }
+.key-control { position: absolute; top: 6px; right: 6px; cursor: default; }
+.model-control { position: absolute; top: 50px; right: 6px; cursor: default; }
+.resize-control { position: absolute; top: 94px; right: 6px; cursor: default; }
+.resize-control .key-button[aria-pressed="true"] { background: #4c47ab; border-color: #a7a4ff; }
+.model-dialog { position: absolute; top: 0; left: 44px; display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid rgba(183,189,255,.26); border-radius: 12px; background: rgba(18,20,48,.96); }
 .model-dialog button { display: grid; gap: 5px; border: 0; border-radius: 8px; padding: 7px; color: white; background: #303171; cursor: pointer; font: 12px system-ui; }
 .blob-icon,.shape-icon { display: block; width: 28px; height: 28px; background: linear-gradient(135deg,#9263ff,#36cffa); border-radius: 48% 52% 42% 58%; }
 .shape-icon { border-radius: 2px; transform: rotate(45deg); background: linear-gradient(135deg,#ff7ac4,#5a7cff); }
@@ -16,3 +18,45 @@
 .key-menu { top: 48px; width: 184px; padding: 12px; border-radius: 12px; display: grid; gap: 6px; font: 13px system-ui; }
 .key-menu strong { color: #c7c7ff; }
 .key-menu small { color: #b4b6ca; }
+.morph-stage.resize-mode { outline: 1px dashed rgba(167, 164, 255, .6); outline-offset: -1px; }
+.resize-handle { position: absolute; width: 18px; height: 18px; padding: 0; border: 1px solid rgba(194, 203, 255, .4); border-radius: 5px; background: rgba(21, 24, 58, .84); color: #f3f5ff; touch-action: none; }
+.resize-handle.nw, .resize-handle.se { cursor: nwse-resize; }
+.resize-handle.ne, .resize-handle.sw { cursor: nesw-resize; }
+.resize-handle.nw::after { transform: rotate(180deg); }
+.resize-handle.ne::after { transform: rotate(90deg); }
+.resize-handle.sw::after { transform: rotate(270deg); }
+.resize-handle::after { content: '◢'; display: block; font-size: 10px; line-height: 16px; text-align: center; }
+.resize-handle:hover, .resize-handle:focus-visible { background: #4c47ab; outline: 2px solid #a7a4ff; outline-offset: 2px; }
+
+@keyframes eidolon-shape-enter {
+  from { opacity: 0; transform: scale(.3); filter: blur(14px); }
+  to { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+@keyframes eidolon-shape-exit {
+  from { opacity: 1; transform: scale(1); filter: blur(0); }
+  to { opacity: 0; transform: scale(.7); filter: blur(10px); }
+}
+@keyframes eidolon-control-enter {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes eidolon-control-exit {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.shape-canvas, .canvas-fallback { transform-origin: center; animation: eidolon-shape-enter 480ms cubic-bezier(.16, 1, .3, 1) both; }
+.key-control { animation: eidolon-control-enter 300ms cubic-bezier(.16, 1, .3, 1) 140ms both; }
+.model-control { animation: eidolon-control-enter 300ms cubic-bezier(.16, 1, .3, 1) 185ms both; }
+.resize-control { animation: eidolon-control-enter 300ms cubic-bezier(.16, 1, .3, 1) 230ms both; }
+
+.overlay-root.is-exiting .shape-canvas, .overlay-root.is-exiting .canvas-fallback { animation: eidolon-shape-exit 240ms cubic-bezier(.4, 0, 1, 1) both; }
+.overlay-root.is-exiting .key-control, .overlay-root.is-exiting .model-control, .overlay-root.is-exiting .resize-control { animation: eidolon-control-exit 160ms cubic-bezier(.4, 0, 1, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .shape-canvas, .canvas-fallback, .key-control, .model-control, .resize-control,
+  .overlay-root.is-exiting .shape-canvas, .overlay-root.is-exiting .canvas-fallback,
+  .overlay-root.is-exiting .key-control, .overlay-root.is-exiting .model-control, .overlay-root.is-exiting .resize-control {
+    animation: none;
+  }
+}

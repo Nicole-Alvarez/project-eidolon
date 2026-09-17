@@ -13,4 +13,8 @@ describe('assertExtensionMessage', () => {
       'Unsupported extension message',
     );
   });
+
+  it('accepts an overlay status probe', () => {
+    expect(assertExtensionMessage({ type: 'overlay/status', tabId: 3 })).toEqual({ type: 'overlay/status', tabId: 3 });
+  });
 });

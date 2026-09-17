@@ -1,4 +1,5 @@
 import type { Point, VisualState } from '../../engine/types';
+import { sampleClosedSpline } from '../../shared/geometry';
 
 type SceneRecipe = {
   body: Point[];
@@ -17,7 +18,7 @@ const baseline: SceneRecipe = {
 function scene(recipe: SceneRecipe): VisualState {
   return {
     elements: [
-      { id: 'body', kind: 'path', layer: 2, opacity: 1, position: { x: 0, y: 0 }, scale: { x: 1, y: 1 }, rotation: 0, fill: { type: 'radial-gradient', innerColor: recipe.innerColor, outerColor: recipe.outerColor, focal: { x: 145, y: 126 }, radius: 176 }, points: resample(recipe.body, 2048), closed: true },
+      { id: 'body', kind: 'path', layer: 2, opacity: 1, position: { x: 0, y: 0 }, scale: { x: 1, y: 1 }, rotation: 0, fill: { type: 'radial-gradient', innerColor: recipe.innerColor, outerColor: recipe.outerColor, focal: { x: 145, y: 126 }, radius: 176 }, points: sampleClosedSpline(recipe.body, 2048), closed: true },
       { id: 'highlight', kind: 'path', layer: 3, opacity: 0.34, position: { x: 0, y: 0 }, scale: { x: 1, y: 1 }, rotation: 0, fill: '#f4f8ff', points: [{ x: 105, y: 88 }, { x: 164, y: 66 }, { x: 204, y: 115 }, { x: 148, y: 142 }], closed: true },
       { id: 'left-orbit', kind: 'line', layer: 1, opacity: 0.7, position: { x: 43, y: 126 + recipe.orbitOffset }, scale: { x: 1, y: 1 }, rotation: -0.34, stroke: '#9077ff', strokeWidth: 3, to: { x: 250, y: 0 } },
       { id: 'right-orbit', kind: 'line', layer: 1, opacity: 0.6, position: { x: 58, y: 198 - recipe.orbitOffset }, scale: { x: 1, y: 1 }, rotation: 0.28, stroke: '#49d7ff', strokeWidth: 3, to: { x: 210, y: 0 } },
@@ -27,16 +28,6 @@ function scene(recipe: SceneRecipe): VisualState {
       { id: 'spark-b', kind: 'particle', layer: 3, opacity: 0.85, position: { x: 258, y: 228 - recipe.orbitOffset }, scale: { x: 1, y: 1 }, rotation: 0, radius: 11, fill: '#c35cff' },
     ],
   };
-}
-
-function resample(points: Point[], count: number): Point[] {
-  return Array.from({ length: count }, (_, index) => {
-    const scaled = index * points.length / count;
-    const start = points[Math.floor(scaled)];
-    const end = points[(Math.floor(scaled) + 1) % points.length];
-    const amount = scaled - Math.floor(scaled);
-    return { x: start.x + (end.x - start.x) * amount, y: start.y + (end.y - start.y) * amount };
-  });
 }
 
 export const blobScenes = {

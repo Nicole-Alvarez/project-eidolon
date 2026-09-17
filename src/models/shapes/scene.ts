@@ -1,5 +1,6 @@
 import type { Point, VisualState } from '../../engine/types';
+import { sampleCircle } from '../../shared/geometry';
 function polygon(count: number, radius: number, sides: number, rotation = -Math.PI / 2): Point[] { return Array.from({ length: count }, (_, index) => { const angle = index * Math.PI * 2 / count + rotation; const sector = Math.PI * 2 / sides; const local = ((angle - rotation + sector / 2) % sector) - sector / 2; const edge = radius * Math.cos(Math.PI / sides) / Math.cos(local); return { x: 150 + Math.cos(angle) * edge, y: 150 + Math.sin(angle) * edge }; }); }
 function state(points: Point[], fill: string): VisualState { return { elements: [{ id: 'body', kind: 'path', layer: 2, opacity: 1, position: { x: 0, y: 0 }, scale: { x: 1, y: 1 }, rotation: 0, fill, points, closed: true }, { id: 'accent', kind: 'circle', layer: 3, opacity: .9, position: { x: 150, y: 150 }, scale: { x: 1, y: 1 }, rotation: 0, radius: 30, fill: '#ffffff' }] }; }
-export function createShapesIdleStates(count = 2048) { return [state(polygon(count, 105, 16), '#596fff'), state(polygon(count, 112, 4, Math.PI / 4), '#a45cff'), state(polygon(count, 116, 3), '#42c9d6'), state(polygon(count, 112, 6), '#ff7ac4')]; }
+export function createShapesIdleStates(count = 2048) { return [state(sampleCircle(105, count, { x: 150, y: 150 }), '#596fff'), state(polygon(count, 112, 4, Math.PI / 4), '#a45cff'), state(polygon(count, 116, 3), '#42c9d6'), state(polygon(count, 112, 6), '#ff7ac4')]; }
 export const shapesIdleStates = createShapesIdleStates();

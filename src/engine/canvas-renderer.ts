@@ -5,12 +5,18 @@ export class CanvasRenderer {
   private width = 0;
   private height = 0;
   private pixelRatio = 1;
+  private sceneScale = 1;
+  private readonly resizeObserver?: ResizeObserver;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     const context = canvas.getContext('2d', { alpha: true });
     if (!context) throw new Error('Canvas 2D is unavailable');
     this.context = context;
     this.resize();
+    this.resizeObserver = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(() => this.resize())
+      : undefined;
+    this.resizeObserver?.observe(canvas);
   }
 
   resize(): void {
@@ -18,18 +24,20 @@ export class CanvasRenderer {
     this.width = Math.max(1, Math.round(bounds.width || this.canvas.width || 320));
     this.height = Math.max(1, Math.round(bounds.height || this.canvas.height || 320));
     this.pixelRatio = Math.max(1, window.devicePixelRatio || 1);
+    this.sceneScale = this.width / 300;
     this.canvas.width = this.width * this.pixelRatio;
     this.canvas.height = this.height * this.pixelRatio;
   }
 
   draw(state: VisualState): void {
     const context = this.context;
-    context.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
-    context.clearRect(0, 0, this.width, this.height);
+    context.setTransform(this.pixelRatio * this.sceneScale, 0, 0, this.pixelRatio * this.sceneScale, 0, 0);
+    context.clearRect(0, 0, this.width / this.sceneScale, this.height / this.sceneScale);
     for (const element of [...state.elements].sort((a, b) => a.layer - b.layer)) this.drawElement(element);
   }
 
   dispose(): void {
+    this.resizeObserver?.disconnect();
     this.context.clearRect(0, 0, this.width, this.height);
   }
 
