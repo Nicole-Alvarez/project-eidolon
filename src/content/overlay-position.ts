@@ -8,6 +8,7 @@ export type PositionStorage = {
 const positionKey = 'eidolon.canvasOverlay.position';
 const sizeKey = 'eidolon.canvasOverlay.size';
 const resizeKey = 'eidolon.canvasOverlay.resize';
+const aiKey = 'eidolon.canvasOverlay.aiEnabled';
 export const defaultOverlaySize = 300;
 export const minOverlaySize = 180;
 export const maxOverlaySize = 640;
@@ -64,4 +65,13 @@ function clamp(value: number, min: number, max: number): number {
 function isPosition(value: unknown): value is OverlayPosition {
   return typeof value === 'object' && value !== null &&
     Number.isFinite((value as OverlayPosition).x) && Number.isFinite((value as OverlayPosition).y);
+}
+
+export async function loadOverlayAI(storage: PositionStorage): Promise<boolean | undefined> {
+  const value = (await storage.get(aiKey))[aiKey];
+  return typeof value === 'boolean' ? value : undefined;
+}
+
+export async function saveOverlayAI(storage: PositionStorage, enabled: boolean): Promise<void> {
+  await storage.set({ [aiKey]: enabled });
 }
